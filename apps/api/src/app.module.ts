@@ -9,6 +9,8 @@ import { BuildingsModule } from './modules/buildings/buildings.module';
 import { ResourcesModule } from './modules/resources/resources.module';
 import { SimulationModule } from './modules/simulation/simulation.module';
 import { WeatherModule } from './modules/weather/weather.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
+import { WorldEventsModule } from './modules/world-events/world-events.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -22,6 +24,8 @@ import { HealthController } from './health.controller';
     BuildingsModule,
     ResourcesModule,
     WeatherModule,
+    RealtimeModule,
+    WorldEventsModule,
     SimulationModule,
   ],
   controllers: [HealthController],
