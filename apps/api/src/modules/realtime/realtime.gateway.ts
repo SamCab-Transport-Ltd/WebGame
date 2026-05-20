@@ -40,7 +40,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
         if (!user) throw new Error('no user');
         (socket.data as { userId: string }).userId = user.id;
         next();
-      } catch (err) {
+      } catch {
         next(new Error('unauthorized'));
       }
     });
