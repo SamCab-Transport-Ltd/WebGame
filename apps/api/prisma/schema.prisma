@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BuildingType {
+  HQ
+  FARM
+  WATER_PUMP
+  SCRAP_YARD
+  BARRACKS
+  WALL
+}
+
+enum ResourceKind {
+  FOOD
+  WATER
+  SCRAP
+  FUEL
+}
+
+enum WeatherKind {
+  CLEAR
+  RAIN
+  HEATWAVE
+  SNOW
+  FOG
+}
+
+enum AttackType {
+  RAID
+  SIEGE
+  SCOUT
+}
+
+enum CombatStatus {
+  PENDING
+  RESOLVED
+}
+
+enum EventKind {
+  WEATHER
+  SHORTAGE
+  DISASTER
+  RAID
+  ECONOMY
+  POLITICAL
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  displayName   String
+  createdAt     DateTime       @default(now())
+  allianceId    String?
+  alliance      Alliance?      @relation(fields: [allianceId], references: [id])
+  refreshTokens RefreshToken[]
+  town          Town?
+
+  @@index([allianceId])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Town {
+  id              String     @id @default(cuid())
+  userId          String     @unique
+  name            String
+  sectorX         Int
+  sectorY         Int
+  defenseRating   Int        @default(0)
+  population      Int        @default(10)
+  happiness       Int        @default(70)
+  hunger          Int        @default(0)
+  lastTickAt      DateTime   @default(now())
+  version         Int        @default(0)
+  createdAt       DateTime   @default(now())
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resources       Resource[]
+  buildings       Building[]
+  outgoingAttacks Combat[]   @relation("attacker")
+  incomingAttacks Combat[]   @relation("defender")
+
+  @@unique([sectorX, sectorY])
+  @@index([userId])
+}
+
+model Resource {
+  id     String       @id @default(cuid())
+  townId String
+  kind   ResourceKind
+  amount Int          @default(0)
+  cap    Int          @default(2000)
+  town   Town         @relation(fields: [townId], references: [id], onDelete: Cascade)
+
+  @@unique([townId, kind])
+}
+
+model Building {
+  id                 String       @id @default(cuid())
+  townId             String
+  type               BuildingType
+  level              Int          @default(1)
+  hp                 Int          @default(100)
+  constructionEndsAt DateTime?
+  town               Town         @relation(fields: [townId], references: [id], onDelete: Cascade)
+
+  @@index([townId])
+  @@index([constructionEndsAt])
+}
+
+model Combat {
+  id             String       @id @default(cuid())
+  attackerTownId String
+  defenderTownId String
+  attackType     AttackType
+  troopCount     Int
+  arriveAt       DateTime
+  resolvedAt     DateTime?
+  status         CombatStatus @default(PENDING)
+  reportJson     Json?
+  attacker       Town         @relation("attacker", fields: [attackerTownId], references: [id], onDelete: Cascade)
+  defender       Town         @relation("defender", fields: [defenderTownId], references: [id], onDelete: Cascade)
+
+  @@index([status, arriveAt])
+  @@index([attackerTownId])
+  @@index([defenderTownId])
+}
+
+model Alliance {
+  id        String   @id @default(cuid())
+  tag       String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  members   User[]
+}
+
+model Weather {
+  id        String      @id @default(cuid())
+  kind      WeatherKind
+  startedAt DateTime
+  endsAt    DateTime
+
+  @@index([endsAt])
+  @@index([startedAt])
+}
+
+model WorldEvent {
+  id        String    @id @default(cuid())
+  kind      EventKind
+  headline  String
+  body      String
+  sectorX   Int?
+  sectorY   Int?
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([kind, createdAt])
+}
